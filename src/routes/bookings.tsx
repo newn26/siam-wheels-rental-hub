@@ -47,6 +47,7 @@ import {
   invalidateBookingData,
   workflowContract,
   type CustomerBooking,
+  cancellationMoney,
 } from "@/lib/queries";
 import { reviewerDisplayName } from "@/lib/reviewer-name";
 
@@ -416,12 +417,28 @@ function BookingsHistoryPage() {
               การจองนี้ยังไม่ได้ชำระค่าจอง ยกเลิกได้โดยไม่มีค่าใช้จ่าย
             </p>
           ) : (
-            <p
-              className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
-              data-testid="cancel-fee-warning"
-            >
-              เงินที่ชำระออนไลน์แล้ว (ค่าจอง) จะไม่ได้รับคืนเมื่อยกเลิก ตามเงื่อนไขในสัญญา
-            </p>
+            cancellingBooking && (
+              <div
+                className="space-y-1 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm"
+                data-testid="cancel-fee-warning"
+              >
+                {(() => {
+                  const m = cancellationMoney(cancellingBooking);
+                  return (
+                    <>
+                      <p className="text-destructive">
+                        ไม่ได้รับคืน: เงินที่ชำระออนไลน์แล้ว (ค่าจอง){m.kept > 0 ? ` ${thb(m.kept)}` : ""} ตามเงื่อนไขในสัญญา
+                      </p>
+                      {m.refunded > 0 && (
+                        <p className="text-foreground" data-testid="cancel-refund">
+                          ได้รับคืน: ยอดที่ชำระเพิ่ม (ค่าเช่า + เงินประกัน − ค่าจอง) {thb(m.refunded)} (DEMO)
+                        </p>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            )
           )}
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setCancellingId(null)}>
