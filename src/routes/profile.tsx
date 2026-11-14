@@ -7,8 +7,6 @@ import {
   CheckCircle2,
   CreditCard,
   FileText,
-  KeyRound,
-  Lock,
   Mail,
   MapPin,
   Phone,
@@ -26,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
+import { ChangePasswordCard } from "@/components/change-password-card";
 import { useAuth } from "@/hooks/use-auth";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -46,7 +45,6 @@ function ProfilePage() {
   const queryClient = useQueryClient();
 
   const [savingProfile, setSavingProfile] = useState(false);
-  const [changingPassword, setChangingPassword] = useState(false);
 
   // Form states for profile
   const [fullName, setFullName] = useState("");
@@ -55,9 +53,6 @@ function ProfilePage() {
   const [licenseNo, setLicenseNo] = useState("");
   const [idCardNo, setIdCardNo] = useState("");
 
-  // Form states for password change
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   // Fetch current user profile
   const {
@@ -128,39 +123,6 @@ function ProfilePage() {
       toast.error(error.message || "ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setSavingProfile(false);
-    }
-  };
-
-  // Handle password change
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (newPassword.length < 6) {
-      toast.error("รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      toast.error("รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน");
-      return;
-    }
-
-    setChangingPassword(true);
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
-      if (error) throw error;
-
-      toast.success("เปลี่ยนรหัสผ่านสำเร็จเรียบร้อยแล้ว");
-      setNewPassword("");
-      setConfirmPassword("");
-    } catch (err: unknown) {
-      const error = err as Error;
-      toast.error(error.message || "ไม่สามารถเปลี่ยนรหัสผ่านได้");
-    } finally {
-      setChangingPassword(false);
     }
   };
 
@@ -346,65 +308,7 @@ function ProfilePage() {
         {/* Right Column: Security & Privacy (4 Cols) */}
         <div className="space-y-6 lg:col-span-4">
           {/* Change Password Card */}
-          <Card className="shadow-card border">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <KeyRound className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">เปลี่ยนรหัสผ่าน</CardTitle>
-              </div>
-              <CardDescription>
-                ตั้งรหัสผ่านใหม่เพื่อความปลอดภัยในการเข้าใช้งาน
-              </CardDescription>
-            </CardHeader>
-
-            <form onSubmit={handleChangePassword}>
-              <CardContent className="space-y-3.5">
-                <div className="space-y-1.5">
-                  <Label htmlFor="new-pw" className="text-xs">รหัสผ่านใหม่</Label>
-                  <div className="relative">
-                    <Input
-                      id="new-pw"
-                      type="password"
-                      placeholder="อย่างน้อย 6 ตัวอักษร"
-                      minLength={6}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                    />
-                    <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="confirm-pw" className="text-xs">ยืนยันรหัสผ่านใหม่</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirm-pw"
-                      type="password"
-                      placeholder="กรอกรหัสผ่านซ้ำอีกครั้ง"
-                      minLength={6}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                    />
-                    <Lock className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-              </CardContent>
-
-              <CardFooter className="border-t pt-3.5">
-                <Button
-                  type="submit"
-                  variant="outline"
-                  size="sm"
-                  disabled={changingPassword || !newPassword}
-                  className="w-full"
-                >
-                  {changingPassword ? "กำลังอัปเดตรหัสผ่าน..." : "เปลี่ยนรหัสผ่าน"}
-                </Button>
-              </CardFooter>
-            </form>
-          </Card>
+          <ChangePasswordCard email={user.email ?? ""} isDemo={isDemo} />
 
           {/* Privacy & Security Guarantee Card */}
           <div className="rounded-xl border bg-card p-4 text-sm text-muted-foreground space-y-2 shadow-sm">
