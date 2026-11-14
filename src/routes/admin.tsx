@@ -81,6 +81,8 @@ import { cancelExpiredBookings } from "@/lib/payment-window";
 import { syncCarStatus } from "@/lib/car-status";
 import { adminReviewsQuery } from "@/lib/admin-reviews";
 import { AdminReviewsPanel } from "@/components/admin/reviews-panel";
+import { AdminCustomersPanel } from "@/components/admin/customers-panel";
+import { buildCustomerRows } from "@/lib/customers";
 import { DEMO_ADMIN_SIGN_IN_ENABLED, dashboardPermissions } from "@/lib/roles";
 import {
   bookingReportCsv,
@@ -124,7 +126,7 @@ export const Route = createFileRoute("/admin")({
  */
 export type DashboardMode = "admin" | "demo";
 
-type AdminTab = "overview" | "cars" | "bookings" | "contracts" | "maintenance" | "reviews" | "reports" | "admins";
+type AdminTab = "overview" | "cars" | "bookings" | "customers" | "contracts" | "maintenance" | "reviews" | "reports" | "admins";
 
 type BookingWithCar = Tables<"bookings"> & {
   cars: Tables<"cars"> | null;
@@ -676,6 +678,11 @@ export function AdminDashboard({ mode }: { mode: DashboardMode }) {
     return m;
   }, [payments]);
 
+  const customerRows = useMemo(
+    () => buildCustomerRows({ profiles, bookings, payments, roles }),
+    [profiles, bookings, payments, roles],
+  );
+
   const metrics = useMemo(() => {
     // Counts a car as rented when it is with a customer today, even if the hand-over was not recorded
     const fleet = fleetCounts(cars, bookings, todayBkk());
@@ -873,6 +880,7 @@ export function AdminDashboard({ mode }: { mode: DashboardMode }) {
                 { id: "overview", label: "ภาพรวมระบบ", icon: LayoutDashboard, count: null },
                 { id: "cars", label: "จัดการรถยนต์ในระบบ", icon: CarIcon, count: cars.length },
                 { id: "bookings", label: "รายการจองของลูกค้า", icon: Calendar, count: bookings.length },
+                { id: "customers", label: "ข้อมูลลูกค้า", icon: Users, count: customerRows.length },
                 { id: "contracts", label: "สัญญาเช่าดิจิทัล", icon: FileCheck2, count: contracts.length },
                 { id: "maintenance", label: "งานซ่อมบำรุง", icon: Wrench, count: maintenanceRecords.length },
                 { id: "reviews", label: "รีวิวจากลูกค้า", icon: MessageSquareWarning, count: reviewsForCount.length },
@@ -1513,6 +1521,9 @@ export function AdminDashboard({ mode }: { mode: DashboardMode }) {
               </CardContent>
             </Card>
           )}
+
+          {/* TAB: CUSTOMERS (view only) */}
+          {activeTab === "customers" && <AdminCustomersPanel rows={customerRows} />}
 
           {/* TAB: CUSTOMER REVIEWS (moderation) */}
           {activeTab === "reviews" && <AdminReviewsPanel isAdmin={perms.moderateReviews} />}
