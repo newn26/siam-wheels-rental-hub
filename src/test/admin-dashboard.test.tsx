@@ -118,7 +118,10 @@ function renderDashboard(auth: Record<string, unknown>) {
   mocks.tables = {
     cars: [CAR],
     bookings: [PENDING, LEGACY],
-    profiles: [{ id: "cust-1", full_name: "ทดสอบ ลูกค้าเอ", phone: "000" }],
+    profiles: [
+      { id: "cust-1", full_name: "ทดสอบ ลูกค้าเอ", phone: "000" },
+      { id: "admin-1", full_name: "ทดสอบ แอดมิน", phone: "111" },
+    ],
     contracts: [LEGACY_CONTRACT],
     payments: [
       {
@@ -215,6 +218,13 @@ describe("admin dashboard", () => {
     });
     expect(screen.getByText(/ปฏิเสธการเข้าถึง/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /ผู้ดูแลระบบ \(Owner\)/ })).not.toBeInTheDocument();
+  });
+
+  it("the customers tab lists customers only (no admins)", async () => {
+    renderDashboard({ ...admin, adminMember: member() });
+    fireEvent.click(await screen.findByRole("button", { name: /ข้อมูลลูกค้า/ }));
+    expect(await screen.findByText("ทดสอบ ลูกค้าเอ")).toBeInTheDocument();
+    expect(screen.queryByText("ทดสอบ แอดมิน")).not.toBeInTheDocument();
   });
 
   it("16 an admin limited to contracts sees no booking-status or fleet actions", async () => {
