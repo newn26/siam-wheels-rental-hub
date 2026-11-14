@@ -157,6 +157,9 @@ function BookingDetailsPage() {
       return data as BookingWithCar | null;
     },
     enabled: !!id,
+    // While the customer waits at the counter for the hand-over, check every 10 s so the
+    // pickup QR appears as soon as the admin marks the booking "active"
+    refetchInterval: (q) => (q.state.data?.status === "confirmed" ? 10_000 : false),
   });
 
   // 2. Payments (only once the booking is no longer pending): booking fee, then the pickup amount
@@ -419,7 +422,7 @@ function BookingDetailsPage() {
     ? null
     : booking.status === "pending" && stage === "awaiting_payment"
       ? "booking_fee"
-      : ["confirmed", "active"].includes(booking.status) &&
+      : booking.status === "active" && // the admin confirmed the customer picked up the car
           Number(feePayment?.amount) === BOOKING_FEE && // not bookings that paid full rent before the fee
           !pickupPayment
         ? "pickup"
@@ -601,7 +604,7 @@ function BookingDetailsPage() {
               <li>ผู้ดูแลยืนยันการจองและส่งฉบับร่างสัญญาให้คุณ</li>
               <li>คุณตรวจสอบสัญญา ขอแก้ไขได้ แล้วกดยืนยัน</li>
               <li>ชำระค่าจอง {thb(BOOKING_FEE)} ด้วย QR หรือบัตร ภายใน 15 นาทีหลังยืนยัน (DEMO)</li>
-              <li>วันรับรถ ชำระค่าเช่า + เงินประกัน หักค่าจองแล้ว</li>
+              <li>วันรับรถ เมื่อผู้ดูแลยืนยันว่าคุณมารับรถ QR สำหรับชำระค่าเช่า + เงินประกัน (หักค่าจองแล้ว) จะขึ้นที่หน้านี้</li>
               <li>คืนรถ รับเงินประกันคืน</li>
             </ol>
           </div>
@@ -705,7 +708,20 @@ function BookingDetailsPage() {
             />
           )}
 
-          {/* Payment: the booking fee once the contract is confirmed, then the pickup amount */}
+          {isOwner &&
+            booking.status === "confirmed" &&
+            Number(feePayment?.amount) === BOOKING_FEE &&
+            !pickupPayment && (
+              <StageCard
+                icon={<Hourglass className="h-6 w-6 text-primary" />}
+                title="ชำระค่าจองแล้ว · ชำระยอดที่เหลือเมื่อมารับรถ"
+                text={`วันรับรถ ${fmtDate(booking.start_date)} เมื่อผู้ดูแลยืนยันว่าคุณมารับรถแล้ว QR สำหรับชำระ ${thb(charges.dueAtPickup)} (ค่าเช่า + เงินประกัน − ค่าจอง) จะขึ้นที่หน้านี้โดยอัตโนมัติ`}
+                testId="pickup-waiting"
+              />
+            )}
+
+          {/* Payment: the booking fee once the contract is confirmed, then the pickup amount
+              once the admin has marked the car handed over (active) */}
           {payKind && (
             <Card className="border shadow-card" data-testid="payment-card">
               <CardHeader>
@@ -719,7 +735,7 @@ function BookingDetailsPage() {
                 </div>
                 {payKind === "pickup" ? (
                   <CardDescription data-testid="pickup-breakdown">
-                    ชำระค่าจองแล้ว · ชำระยอดที่เหลือได้ตั้งแต่ตอนนี้จนถึงวันรับรถ: ค่าเช่า{" "}
+                    ผู้ดูแลยืนยันว่าคุณมารับรถแล้ว · กรุณาชำระยอดวันรับรถ: ค่าเช่า{" "}
                     {thb(charges.rent)} + เงินประกัน {thb(charges.insurance)} − ค่าจอง{" "}
                     {thb(charges.fee)} ={" "}
                     <strong className="text-foreground">{thb(charges.dueAtPickup)}</strong>
@@ -1106,9 +1122,19 @@ function BookingDetailsPage() {
   );
 }
 
-function StageCard({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+function StageCard({
+  icon,
+  title,
+  text,
+  testId = "stage-card",
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+  testId?: string;
+}) {
   return (
-    <Card className="border shadow-card" data-testid="stage-card">
+    <Card className="border shadow-card" data-testid={testId}>
       <CardHeader>
         <div className="flex items-start gap-3">
           {icon}
