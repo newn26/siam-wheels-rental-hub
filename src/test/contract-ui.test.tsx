@@ -665,7 +665,43 @@ describe("booking-fee wording", () => {
 
     const cancels = screen.getAllByRole("button", { name: /ยกเลิกการจอง/ });
     fireEvent.click(cancels[0]!); // the confirmed (paid) booking comes first
-    expect(await screen.findByTestId("cancel-fee-warning")).toHaveTextContent("จะไม่ได้รับคืน");
+    expect(await screen.findByTestId("cancel-fee-warning")).toHaveTextContent("ไม่ได้รับคืน");
+    expect(screen.queryByTestId("cancel-refund")).not.toBeInTheDocument();
+  });
+
+  it("cancelling after paying the rest online: the fee is kept, the rest is refunded", async () => {
+    const { Route: BookingsRoute } = await import("@/routes/bookings");
+    const Page = (BookingsRoute as unknown as { component: ComponentType }).component;
+    const paid = (kind: string, amount: number) => ({
+      id: `p-${kind}`,
+      booking_id: "b-paid",
+      user_id: "cust-1",
+      status: "paid",
+      method: "qr",
+      amount,
+      kind,
+      deposit: kind === "pickup" ? 2970 : 0,
+      paid_at: inMinutes(-10),
+      refund_status: "none",
+    });
+    mocks.tables = {
+      bookings: [
+        {
+          ...BOOKING,
+          id: "b-paid",
+          booking_code: "BK261114PAID2",
+          status: "confirmed",
+          hold_expires_at: null,
+          reviews: null,
+          contracts: { id: "ct-p", status: "paid", current_version: 1, sent_version: 1 },
+          payments: [paid("booking_fee", 1000), paid("pickup", 4940)],
+        },
+      ],
+    };
+    renderWithQuery(<Page />);
+    fireEvent.click(await screen.findByRole("button", { name: /ยกเลิกการจอง/ }));
+    expect(await screen.findByTestId("cancel-fee-warning")).toHaveTextContent("฿1,000");
+    expect(screen.getByTestId("cancel-refund")).toHaveTextContent("฿4,940");
   });
 
   it("admin overview hides the old 'waiting for admin approval' tile when nothing waits", async () => {

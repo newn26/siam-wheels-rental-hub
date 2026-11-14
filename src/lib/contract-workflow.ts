@@ -211,7 +211,7 @@ export const actorRoleLabel: Record<string, string> = {
 export const refundStatusLabel: Record<string, string> = {
   none: "-",
   not_refunded: "ยกเลิกแล้ว · ไม่คืนเงิน (ค่าจองไม่คืนเมื่อยกเลิก ตามเงื่อนไขในสัญญา)",
-  refunded: "คืนเงินแล้ว",
+  refunded: "ยกเลิกแล้ว · คืนเงินแล้ว (DEMO)",
 };
 
 // ---------------------------------------------------------------------------
