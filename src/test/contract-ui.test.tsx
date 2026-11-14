@@ -202,7 +202,33 @@ describe("customer booking page", () => {
     expect(within(card).getAllByText("฿1,000").length).toBeGreaterThan(0);
   });
 
-  it("after the booking fee, the customer pays the rest (rent + deposit - fee) online", async () => {
+  it("after the fee only: no pickup QR yet, the page says it appears at pickup", async () => {
+    setup({
+      booking: { status: "confirmed", hold_expires_at: null },
+      contract: contractRow({ status: "paid" }),
+      versions: [versionRow()],
+      payment: [
+        {
+          id: "p-1",
+          booking_id: "b-1",
+          method: "qr",
+          amount: 1000,
+          status: "paid",
+          kind: "booking_fee",
+          deposit: 0,
+          reference: "DEMO-FEE",
+          card_last4: null,
+          paid_at: inMinutes(-5),
+          refund_status: "none",
+        },
+      ],
+    });
+    expect(await screen.findByTestId("pickup-waiting")).toHaveTextContent("฿4,940");
+    expect(screen.queryByTestId("payment-card")).not.toBeInTheDocument();
+    expect(mocks.rpc).not.toHaveBeenCalledWith("pay_pickup", expect.anything());
+  });
+
+  it("once the admin marks the car handed over (active), the customer pays the rest online", async () => {
     const fee = {
       id: "p-1",
       booking_id: "b-1",
@@ -217,12 +243,13 @@ describe("customer booking page", () => {
       refund_status: "none",
     };
     setup({
-      booking: { status: "confirmed", hold_expires_at: null },
+      booking: { status: "active", hold_expires_at: null },
       contract: contractRow({ status: "paid" }),
       versions: [versionRow()],
       payment: [fee],
     });
     const card = await screen.findByTestId("payment-card");
+    expect(screen.queryByTestId("pickup-waiting")).not.toBeInTheDocument();
     expect(within(card).getByTestId("pickup-breakdown")).toHaveTextContent("฿4,940");
     fireEvent.click(
       within(card).getByRole("button", { name: /จำลองยืนยันการชำระเงินผ่าน QR Code/ }),

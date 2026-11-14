@@ -1879,7 +1879,7 @@ export function AdminDashboard({ mode }: { mode: DashboardMode }) {
 
             <div className="rounded-lg bg-muted p-3 text-xs text-muted-foreground space-y-1">
               <p>• การจองที่รอดำเนินการจะ <strong>ยืนยัน</strong> ได้หลังลูกค้ายืนยันสัญญาและชำระค่าจองแล้วเท่านั้น</p>
-              <p>• เมื่อเปลี่ยนเป็น <strong>กำลังเช่า (Active)</strong> ระบบจะปรับสถานะรถคันนี้เป็น "ถูกเช่า" อัตโนมัติ</p>
+              <p>• เมื่อเปลี่ยนเป็น <strong>กำลังเช่า (Active)</strong> ระบบจะปรับสถานะรถคันนี้เป็น "ถูกเช่า" อัตโนมัติ และลูกค้าจะเห็น QR สำหรับชำระยอดวันรับรถ (ค่าเช่า + เงินประกัน − ค่าจอง) ทันที</p>
               {updatingBooking && todayBkk() < updatingBooking.start_date && (
                 <p className="font-medium text-amber-700" data-testid="before-pickup-note">
                   • ส่งมอบรถ (กำลังเช่า) และรับรถคืน (เสร็จสิ้น) ได้ตั้งแต่วันรับรถ {fmtDate(updatingBooking.start_date)} เป็นต้นไป
