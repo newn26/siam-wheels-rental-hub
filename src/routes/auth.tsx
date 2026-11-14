@@ -191,8 +191,8 @@ function AuthForms({
           goToInvite(invite);
           return;
         }
-        // Demo admins always land on their restricted dashboard
-        navigate({ to: role === "demo_admin" ? homeForRole(role) : "/" });
+        // Admins land on the admin dashboard, demo admins on their restricted one, customers on home
+        navigate({ to: homeForRole(role) });
       } catch (err: unknown) {
         const error = err as Error;
         toast.error(error.message || "ไม่สามารถเชื่อมต่อระบบได้");
